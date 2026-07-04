@@ -86,6 +86,14 @@ img {
   animation: logoLoop 22s linear infinite;
 }
 
+.splash-logo-pop {
+  animation: splashLogoPop 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.splash-logo-clear {
+  animation: splashLogoClear 900ms ease both;
+}
+
 .masonry-grid {
   column-count: 1;
   column-gap: 1rem;
@@ -133,6 +141,34 @@ img {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes splashLogoPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.72) translateY(18px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.06) translateY(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes splashLogoClear {
+  0% {
+    filter: blur(18px);
+    opacity: 0.25;
+    transform: scale(1.08);
+  }
+  100% {
+    filter: blur(0);
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
