@@ -1,169 +1,154 @@
-import { useEffect, useState } from "react"
-import { ArrowRight, Mail, ShieldCheck, Sparkles, Truck } from "lucide-react"
-import { Link } from "react-router-dom"
-import Button from "../../components/Button/Button"
+import { useEffect, useMemo, useState } from "react"
+import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 import ProductCard from "../../components/ProductCard/ProductCard"
-import GradientText from "../../components/ui/GradientText"
-import GradientBackground from "../../components/ui/GradientBackground"
-import ScrollVelocity from "../../components/ui/ScrollVelocity"
-import LogoLoop from "../../components/ui/LogoLoop"
-import Masonry from "../../components/ui/Masonry"
-import SpotlightCard from "../../components/ui/SpotlightCard"
-import { brandPartners, testimonials } from "../../utils/constants"
 import { productService } from "../../services/productService"
 
-const editorialTiles = [
-  {
-    title: "Outerwear with presence",
-    eyebrow: "Capsule 01",
-    image: "https://images.unsplash.com/photo-1516762689617-e1cffcef479d?auto=format&fit=crop&w=900&q=82",
-  },
-  {
-    title: "Soft tailoring",
-    eyebrow: "Atelier",
-    image: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=900&q=82",
-  },
-  {
-    title: "Evening silk",
-    eyebrow: "Occasion",
-    image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=82",
-  },
+const fallbackSlides = [
+  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=900&q=86",
+  "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=86",
+  "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=86",
+]
+
+const marqueeItems = [
+  "New streetwear essentials just arrived",
+  "COD and prepaid checkout available",
+  "Fresh silhouettes for the forward path",
 ]
 
 export default function Home() {
   const [catalog, setCatalog] = useState([])
+  const [categories, setCategories] = useState(["All"])
+  const [activeCategory, setActiveCategory] = useState("All")
+  const [activeSlide, setActiveSlide] = useState(0)
+  const [query, setQuery] = useState("")
 
   useEffect(() => {
-    productService.list("?limit=8").then(setCatalog).catch(() => setCatalog([]))
+    Promise.all([productService.list("?limit=100"), productService.categories()])
+      .then(([products, nextCategories]) => {
+        setCatalog(products)
+        setCategories(["All", ...nextCategories.map((category) => category.name)])
+      })
+      .catch(() => {
+        setCatalog([])
+        setCategories(["All"])
+      })
   }, [])
 
-  const featured = catalog.filter((product) => product.tags.includes("featured")).slice(0, 4)
-  const trending = catalog.filter((product) => product.tags.includes("trending")).slice(0, 6)
+  const slides = catalog.map((product) => product.image).filter(Boolean).slice(0, 3)
+  const heroSlides = slides.length ? slides : fallbackSlides
+
+  const visibleProducts = useMemo(
+    () =>
+      catalog
+        .filter((product) => activeCategory === "All" || product.category === activeCategory)
+        .filter((product) => product.name.toLowerCase().includes(query.toLowerCase())),
+    [activeCategory, catalog, query],
+  )
+
+  const nextSlide = () => setActiveSlide((value) => (value + 1) % heroSlides.length)
+  const previousSlide = () => setActiveSlide((value) => (value - 1 + heroSlides.length) % heroSlides.length)
 
   return (
-    <div>
-      <GradientBackground className="relative overflow-hidden px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-10 lg:grid-cols-[1fr_0.86fr]">
-          <div className="max-w-3xl">
-            <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-black/10 bg-white/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.26em] text-[#6d604c]">
-              <Sparkles size={14} /> Spring atelier edit
-            </p>
-            <GradientText as="h1" className="text-5xl font-black leading-[0.95] tracking-normal sm:text-7xl lg:text-8xl">
-              Aesthetx Flow clothing for the modern street-luxe wardrobe.
-            </GradientText>
-            <p className="mt-6 max-w-2xl text-base leading-7 text-[#5d554b] sm:text-lg">
-              Shop premium drops, clean silhouettes, everyday statement pieces, and client-ready essentials.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                to="/shop"
-                className="group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-[#171513] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-black/10 transition duration-300 hover:bg-[#2b2722]"
-              >
-                Shop the collection <ArrowRight size={18} className="transition group-hover:translate-x-1" />
-              </Link>
-              <Link to="/shop" className="inline-flex min-h-11 items-center justify-center rounded-full border border-black/10 bg-white/70 px-5 text-sm font-semibold">
-                New arrivals
-              </Link>
-            </div>
-          </div>
-          <div className="relative">
-            <img
-              src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1200&q=84"
-              alt="Model wearing premium neutral fashion"
-              className="aspect-[4/5] w-full rounded-[2rem] object-cover shadow-2xl"
+    <div className="bg-white">
+      <section className="border-b border-zinc-100 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+          <label className="flex items-center gap-2 rounded-full bg-zinc-50 px-4 py-2">
+            <Search size={14} className="text-zinc-400" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search products..."
+              className="w-full bg-transparent text-xs font-medium text-black outline-none placeholder:text-zinc-400"
             />
-            <div className="absolute bottom-5 left-5 right-5 rounded-[1.5rem] bg-white/82 p-4 backdrop-blur">
-              <p className="text-sm font-bold uppercase tracking-[0.24em] text-[#8b6f43]">Editorial pick</p>
-              <p className="mt-1 text-xl font-semibold text-[#171513]">Premium fits, limited drops, easy checkout.</p>
+          </label>
+        </div>
+        <nav className="mx-auto flex max-w-7xl gap-5 overflow-x-auto px-4 py-3 sm:px-6 lg:px-8">
+          {categories.map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setActiveCategory(category)}
+              className={`relative whitespace-nowrap pb-1 text-[9px] font-black uppercase tracking-[0.18em] transition ${
+                activeCategory === category ? "text-black" : "text-zinc-400"
+              }`}
+            >
+              {category}
+              {activeCategory === category && <span className="absolute bottom-0 left-0 right-0 h-[1.5px] rounded-full bg-black" />}
+            </button>
+          ))}
+        </nav>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+        <div className="group relative aspect-[4/5] overflow-hidden rounded-[2px] bg-zinc-100 md:aspect-[16/7]">
+          {heroSlides.map((slide, index) => (
+            <img
+              key={slide}
+              src={slide}
+              alt={`Aesthetx Flow campaign ${index + 1}`}
+              className={`absolute inset-0 h-full w-full object-cover transition duration-700 ${
+                index === activeSlide ? "opacity-100 scale-100" : "opacity-0 scale-[1.02]"
+              }`}
+            />
+          ))}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="absolute left-4 top-4 rounded-full bg-white/85 px-3 py-1 text-[8px] font-black uppercase tracking-[0.22em] text-black backdrop-blur">
+            Aesthetx Flow
+          </div>
+          <div className="absolute bottom-9 left-4 right-4 text-white">
+            <p className="text-[9px] font-black uppercase tracking-[0.26em] text-white/70">New season</p>
+            <h1 className="mt-1 max-w-2xl text-3xl font-black uppercase leading-none tracking-[0.06em] md:text-6xl">Streetwear for the forward path.</h1>
+          </div>
+          <button
+            type="button"
+            onClick={previousSlide}
+            className="absolute left-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-white/20 text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={nextSlide}
+            className="absolute right-3 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-white/20 bg-white/20 text-white opacity-0 backdrop-blur transition group-hover:opacity-100"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={16} />
+          </button>
+          <div className="absolute bottom-0 left-0 right-0 overflow-hidden bg-black/90 py-1 text-white">
+            <div className="scroll-velocity-track flex w-max whitespace-nowrap text-[8.5px] font-black uppercase tracking-[0.2em]">
+              {[...marqueeItems, ...marqueeItems].map((item, index) => (
+                <span key={`${item}-${index}`} className="mx-6">
+                  {item} <span className="ml-6 text-zinc-500">•</span>
+                </span>
+              ))}
             </div>
           </div>
         </div>
-      </GradientBackground>
+      </section>
 
-      <ScrollVelocity items={["Cash on delivery available", "Razorpay-ready checkout", "Limited premium drops", "Fast order tracking"]} />
-
-      <section className="mx-auto grid max-w-7xl gap-4 px-4 py-8 sm:px-6 md:grid-cols-3 lg:px-8">
-        {[
-          ["Premium quality", "Curated fabrics and polished finishing.", ShieldCheck],
-          ["Quick delivery", "Shipping-ready order flow and tracking.", Truck],
-          ["Fresh drops", "Admin can add new clothes instantly.", Sparkles],
-        ].map(([title, copy, Icon]) => (
-          <div key={title} className="flex items-start gap-4 rounded-[1.5rem] border border-black/10 bg-white p-5">
-            <Icon className="text-[#8b6f43]" />
+      <main id="shop-content" className="mx-auto max-w-7xl px-4 pb-6 sm:px-6 lg:px-8">
+        <div className="mb-3 flex items-center justify-between py-2">
+          <span className="text-[9px] font-black uppercase tracking-[0.26em] text-zinc-400">
+            {activeCategory === "All" ? "All products" : activeCategory}
+          </span>
+          <span className="text-[9px] font-medium text-zinc-400">{visibleProducts.length} items</span>
+        </div>
+        {visibleProducts.length ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-5 xl:gap-y-8">
+            {visibleProducts.map((product) => (
+              <ProductCard key={product.id} product={product} compact />
+            ))}
+          </div>
+        ) : (
+          <div className="grid min-h-56 place-items-center bg-zinc-50 text-center">
             <div>
-              <h2 className="font-bold text-[#171513]">{title}</h2>
-              <p className="mt-1 text-sm text-[#72695e]">{copy}</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.25em] text-zinc-400">No products</p>
+              <p className="mt-2 text-xs text-zinc-500">Add items from the admin products page.</p>
             </div>
           </div>
-        ))}
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#8b6f43]">Featured products</p>
-            <h2 className="mt-2 text-3xl font-black text-[#171513] sm:text-4xl">The signature edit</h2>
-          </div>
-          <Link to="/shop" className="inline-flex items-center gap-2 text-sm font-semibold text-[#171513]">
-            View all <ArrowRight size={16} />
-          </Link>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-[#eee5d8] px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <div className="mb-8">
-            <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#8b6f43]">Categories</p>
-            <h2 className="mt-2 text-3xl font-black text-[#171513] sm:text-4xl">Built around the wardrobe</h2>
-          </div>
-          <Masonry items={editorialTiles} />
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        <LogoLoop logos={brandPartners} />
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#8b6f43]">Trending now</p>
-          <h2 className="mt-2 text-3xl font-black text-[#171513] sm:text-4xl">Client favorites</h2>
-        </div>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {trending.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      <section className="dark-gradient px-4 py-16 text-white sm:px-6 lg:px-8">
-        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
-          {testimonials.map((testimonial) => (
-            <SpotlightCard key={testimonial.name} className="bg-white/8 text-white">
-              <p className="text-lg leading-8 text-[#f4eadc]">"{testimonial.quote}"</p>
-              <p className="mt-5 font-semibold">{testimonial.name}</p>
-              <p className="text-sm text-[#d3c7b7]">{testimonial.role}</p>
-            </SpotlightCard>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-4 py-16 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl rounded-[2rem] border border-black/10 bg-white p-6 text-center shadow-sm sm:p-10">
-          <Mail className="mx-auto mb-4 text-[#8b6f43]" />
-          <h2 className="text-3xl font-black text-[#171513]">Join the private list</h2>
-          <p className="mx-auto mt-3 max-w-xl text-[#72695e]">Early access to capsule drops, styling appointments, and atelier notes.</p>
-          <form className="mx-auto mt-6 flex max-w-xl flex-col gap-3 sm:flex-row">
-            <input className="min-h-12 flex-1 rounded-full border border-black/10 px-5 outline-none focus:border-[#8b6f43]" placeholder="Email address" />
-            <Button type="submit">Subscribe</Button>
-          </form>
-        </div>
-      </section>
+        )}
+      </main>
     </div>
   )
 }

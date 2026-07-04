@@ -48,6 +48,13 @@ export const productService = {
     const data = await request("/categories")
     return data.categories || []
   },
+  async createCategory(category) {
+    const data = await jsonRequest("/categories", {
+      method: "POST",
+      body: JSON.stringify(category),
+    })
+    return data.category
+  },
   async create(product) {
     const formData = new FormData()
     formData.append("name", product.name)

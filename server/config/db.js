@@ -5,10 +5,12 @@ const connectDB = async () => {
   if (!uri) throw new Error("MONGODB_URI is required")
 
   mongoose.set("strictQuery", true)
-  await mongoose.connect(uri)
+  await mongoose.connect(uri, {
+    serverSelectionTimeoutMS: 8000,
+    socketTimeoutMS: 45000,
+  })
   console.log("MongoDB connected")
 }
 
 module.exports = connectDB
-
 

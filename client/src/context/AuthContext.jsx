@@ -21,40 +21,52 @@ export function AuthProvider({ children }) {
 
   const login = async (payload) => {
     setIsLoading(true)
-    const nextUser = await authService.login(payload)
-    setUser(nextUser)
-    setIsLoading(false)
-    return nextUser
+    try {
+      const nextUser = await authService.login(payload)
+      setUser(nextUser)
+      return nextUser
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const register = async (payload) => {
     setIsLoading(true)
-    const nextUser = await authService.register(payload)
-    setUser(nextUser)
-    setIsLoading(false)
-    return nextUser
+    try {
+      const nextUser = await authService.register(payload)
+      setUser(nextUser)
+      return nextUser
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const googleLogin = async (payload) => {
     setIsLoading(true)
-    const nextUser = await authService.googleLogin(payload)
-    setUser(nextUser)
-    setIsLoading(false)
-    return nextUser
+    try {
+      const nextUser = await authService.googleLogin(payload)
+      setUser(nextUser)
+      return nextUser
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const sendOtp = (payload) => authService.sendOtp(payload)
 
   const verifyOtp = async (payload) => {
     setIsLoading(true)
-    const nextUser = await authService.verifyOtp(payload)
-    setUser(nextUser)
-    setIsLoading(false)
-    return nextUser
+    try {
+      const nextUser = await authService.verifyOtp(payload)
+      setUser(nextUser)
+      return nextUser
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const logout = async () => {
-    await authService.logout()
+    await authService.logout().catch(() => null)
     setUser(null)
   }
 

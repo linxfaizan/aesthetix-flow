@@ -9,6 +9,7 @@ import { productService } from "../../services/productService"
 const emptyProduct = {
   name: "",
   category: "",
+  customCategory: "",
   price: "",
   stock: "10",
   description: "",
@@ -59,7 +60,7 @@ export default function Products() {
     [category, products, query],
   )
 
-  const openAdd = () => setEditing({ ...emptyProduct, id: `p-${Date.now()}`, category: categories[0]?._id || "" })
+  const openAdd = () => setEditing({ ...emptyProduct, id: `p-${Date.now()}`, category: categories[0]?._id || "__custom__" })
   const closeModal = () => {
     setEditing(null)
     setError("")
@@ -70,8 +71,21 @@ export default function Products() {
     setIsSaving(true)
     setError("")
     try {
+      let categoryId = editing.category
+      if (editing.category === "__custom__") {
+        if (!editing.customCategory.trim()) {
+          throw new Error("Enter a custom item type.")
+        }
+        const createdCategory = await productService.createCategory({
+          name: editing.customCategory.trim(),
+          description: `${editing.customCategory.trim()} products`,
+        })
+        categoryId = createdCategory._id
+      }
+
       await productService.create({
         ...editing,
+        category: categoryId,
         sizes: ["S", "M", "L", "XL"],
         colors: ["Black", "White"],
       })
@@ -153,11 +167,26 @@ export default function Products() {
             <Input label="Pricing" type="number" value={editing.price} onChange={(event) => setEditing({ ...editing, price: event.target.value })} required />
             <label className="grid gap-2 text-sm font-medium">
               Item type
-              <select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value })} className="min-h-12 rounded-2xl border border-black/10 px-4" required>
+              <select
+                value={editing.category}
+                onChange={(event) => setEditing({ ...editing, category: event.target.value, customCategory: "" })}
+                className="min-h-12 rounded-2xl border border-black/10 px-4"
+                required
+              >
                 {categories.map((item) => <option key={item._id} value={item._id}>{item.name}</option>)}
+                <option value="__custom__">+ Add custom item type</option>
               </select>
             </label>
             <Input label="Stock" type="number" value={editing.stock} onChange={(event) => setEditing({ ...editing, stock: event.target.value })} required />
+            {editing.category === "__custom__" && (
+              <Input
+                label="Custom item type"
+                value={editing.customCategory}
+                onChange={(event) => setEditing({ ...editing, customCategory: event.target.value })}
+                placeholder="Example: Hoodies"
+                required
+              />
+            )}
             <label className="grid gap-2 text-sm font-medium sm:col-span-2">
               Short description
               <textarea value={editing.description} onChange={(event) => setEditing({ ...editing, description: event.target.value })} className="min-h-24 rounded-2xl border border-black/10 bg-white px-4 py-3 outline-none focus:border-[#8b6f43]" required />
